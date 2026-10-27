@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 export default function DocumentsView({
   search,
   setSearch,
@@ -16,8 +18,10 @@ export default function DocumentsView({
   handleDeleteDocument,
 }) {
   const filteredDocuments = documents.filter((document) =>
-    document.filename?.toLowerCase().includes(search.toLowerCase())
+    document.filename?.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const [documentToDelete, setDocumentToDelete] = useState(null);
 
   return (
     <section className="subpage">
@@ -70,9 +74,7 @@ export default function DocumentsView({
         ) : filteredDocuments.length === 0 ? (
           <div className="document-empty-state">
             <div className="upload-illustration">↑</div>
-            <h2>
-              {search ? "No matching documents" : "No documents yet"}
-            </h2>
+            <h2>{search ? "No matching documents" : "No documents yet"}</h2>
             <p>
               {search
                 ? "Try another search term."
@@ -87,8 +89,7 @@ export default function DocumentsView({
             {filteredDocuments.map((document) => (
               <div className="document-row" key={document.id}>
                 <div className="document-file-icon">
-                  {document.filename?.split(".").pop()?.toUpperCase() ||
-                    "FILE"}
+                  {document.filename?.split(".").pop()?.toUpperCase() || "FILE"}
                 </div>
 
                 <div className="document-info">
@@ -119,7 +120,7 @@ export default function DocumentsView({
                     type="button"
                     className="document-action-button delete-action"
                     disabled={deletingDocumentId === document.id}
-                    onClick={() => handleDeleteDocument(document.id)}
+                    onClick={() => setDocumentToDelete(document)}
                   >
                     {deletingDocumentId === document.id
                       ? "Deleting..."
@@ -131,6 +132,59 @@ export default function DocumentsView({
           </div>
         )}
       </div>
+      {documentToDelete && (
+        <div
+          className="delete-modal-overlay"
+          onClick={() => {
+            if (!deletingDocumentId) {
+              setDocumentToDelete(null);
+            }
+          }}
+        >
+          <div
+            className="delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-document-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="delete-modal-icon">!</div>
+
+            <h2 id="delete-document-modal-title">Delete document?</h2>
+
+            <p>
+              Are you sure you want to delete{" "}
+              <strong>{documentToDelete.filename}</strong>? This action cannot
+              be undone.
+            </p>
+
+            <div className="delete-modal-actions">
+              <button
+                type="button"
+                className="delete-modal-cancel"
+                disabled={deletingDocumentId === documentToDelete.id}
+                onClick={() => setDocumentToDelete(null)}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="delete-modal-confirm"
+                disabled={deletingDocumentId === documentToDelete.id}
+                onClick={async () => {
+                  await handleDeleteDocument(documentToDelete.id);
+                  setDocumentToDelete(null);
+                }}
+              >
+                {deletingDocumentId === documentToDelete.id
+                  ? "Deleting..."
+                  : "Delete Document"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -219,12 +219,6 @@ export default function DashboardPage() {
   async function handleDeleteDocument(documentId) {
     if (!selectedOrganizationId) return;
 
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this document?",
-    );
-
-    if (!confirmed) return;
-
     setDeletingDocumentId(documentId);
     setDocumentMessage("");
 
@@ -241,6 +235,7 @@ export default function DashboardPage() {
       setDocumentMessage("Document deleted successfully.");
     } catch (error) {
       setDocumentMessage(error.message);
+      throw error;
     } finally {
       setDeletingDocumentId(null);
     }
@@ -295,7 +290,9 @@ export default function DashboardPage() {
             />
           )}
 
-          {activeView === "AI Assistant" && <AIAssistantView />}
+          {activeView === "AI Assistant" && (
+            <AIAssistantView organizationId={selectedOrganizationId} />
+          )}
 
           <footer className="dashboard-footer">
             <span>NeuralDesk</span>

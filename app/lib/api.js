@@ -22,20 +22,35 @@ export async function apiRequest(endpoint, options = {}) {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const detail = errorData.detail;
+  const errorData = await response.json().catch(() => ({}));
+  const detail = errorData.detail;
 
-    const message =
-      typeof detail === "string"
-        ? detail
-        : detail
-          ? JSON.stringify(detail)
-          : `Request failed with status ${response.status}`;
+  const message =
+    typeof detail === "string"
+      ? detail
+      : detail
+        ? JSON.stringify(detail)
+        : `Request failed with status ${response.status}`;
 
-    throw new Error(message);
+  if (
+    response.status === 401 &&
+    typeof window !== "undefined"
+  ) {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("selected_organization_id");
+
+    window.location.replace("/login");
+
+    throw new Error("Session expired. Please log in again.");
   }
 
-  if (response.status === 204) return null;
+  throw new Error(message);
+}
 
-  return response.json();
+if (response.status === 204) {
+  return null;
+}
+
+return response.json();
+
 }
