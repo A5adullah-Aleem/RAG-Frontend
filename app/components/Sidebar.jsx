@@ -1,10 +1,13 @@
 "use client";
 
-const navigation = [
+
+  const navigation = [
   { name: "Overview", icon: "◫" },
   { name: "Documents", icon: "▤" },
+  { name: "Members", icon: "♙" },
   { name: "AI Assistant", icon: "✳" },
 ];
+
 
 export default function Sidebar({
   activeView,
@@ -16,9 +19,10 @@ export default function Sidebar({
   showWorkspaceOptions,
   setShowWorkspaceOptions,
   handleSignOut,
+  onCreateOrganization,
 }) {
   const selectedOrg = organizations.find(
-    (org) => String(org.id) === String(selectedOrganizationId)
+    (org) => String(org.id) === String(selectedOrganizationId),
   );
 
   return (
@@ -33,10 +37,10 @@ export default function Sidebar({
       <button
         className="workspace-switcher"
         onClick={() => {
-          if (organizations.length > 1) {
+          if (organizations.length > 0) {
             setShowWorkspaceOptions((previous) => !previous);
           } else {
-            setActiveView("Overview");
+            onCreateOrganization();
           }
         }}
         disabled={organizationsLoading}
@@ -67,7 +71,7 @@ export default function Sidebar({
                 setSelectedOrganizationId(String(organization.id));
                 localStorage.setItem(
                   "selected_organization_id",
-                  String(organization.id)
+                  String(organization.id),
                 );
                 setShowWorkspaceOptions(false);
                 setActiveView("Overview");
@@ -85,6 +89,16 @@ export default function Sidebar({
           ))}
         </div>
       )}
+
+      <button
+        type="button"
+        className="create-organization-button"
+        onClick={onCreateOrganization}
+        disabled={organizationsLoading}
+      >
+        <span>+</span>
+        <span>Create Organization</span>
+      </button>
 
       <div className="sidebar-section-label">MENU</div>
 

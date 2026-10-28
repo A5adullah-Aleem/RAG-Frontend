@@ -229,6 +229,12 @@ export default function AuthForm({ mode }) {
               />
             </div>
 
+            {isLogin && (
+              <div className="forgot-password-link">
+                <Link href="/forgot-password">Forgot password?</Link>
+              </div>
+            )}
+
             <button type="submit" className="primary-button" disabled={loading}>
               {loading
                 ? "Please wait..."

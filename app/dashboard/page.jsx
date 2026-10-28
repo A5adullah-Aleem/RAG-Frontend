@@ -9,6 +9,7 @@ import Topbar from "../components/Topbar";
 import OverviewView from "../components/OverviewView";
 import DocumentsView from "../components/DocumentsView";
 import AIAssistantView from "../components/AIAssistantView";
+import MembersView from "../components/MembersView";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -21,6 +22,13 @@ export default function DashboardPage() {
   const [organizationsLoading, setOrganizationsLoading] = useState(false);
   const [organizationsError, setOrganizationsError] = useState("");
   const [showWorkspaceOptions, setShowWorkspaceOptions] = useState(false);
+
+  const [showCreateOrganizationModal, setShowCreateOrganizationModal] =
+    useState(false);
+
+  const [newOrganizationName, setNewOrganizationName] = useState("");
+
+  const [creatingOrganization, setCreatingOrganization] = useState(false);
 
   const [documents, setDocuments] = useState([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
@@ -216,6 +224,52 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleCreateOrganization(event) {
+    event.preventDefault();
+
+    const name = newOrganizationName.trim();
+
+    if (!name) {
+      setOrganizationsError("Organization name cannot be empty.");
+      return;
+    }
+
+    setCreatingOrganization(true);
+    setOrganizationsError("");
+
+    try {
+      const organization = await apiRequest("/organizations/", {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      });
+
+      // Add the new organization to the sidebar list.
+      setOrganizations((previous) => {
+        const alreadyExists = previous.some(
+          (org) => String(org.id) === String(organization.id),
+        );
+
+        return alreadyExists ? previous : [...previous, organization];
+      });
+
+      // Automatically select the newly created organization.
+      const newOrganizationId = String(organization.id);
+
+      setSelectedOrganizationId(newOrganizationId);
+
+      localStorage.setItem("selected_organization_id", newOrganizationId);
+
+      setShowWorkspaceOptions(false);
+      setShowCreateOrganizationModal(false);
+      setNewOrganizationName("");
+      setActiveView("Overview");
+    } catch (error) {
+      setOrganizationsError(error.message || "Failed to create organization.");
+    } finally {
+      setCreatingOrganization(false);
+    }
+  }
+
   async function handleDeleteDocument(documentId) {
     if (!selectedOrganizationId) return;
 
@@ -262,6 +316,11 @@ export default function DashboardPage() {
         showWorkspaceOptions={showWorkspaceOptions}
         setShowWorkspaceOptions={setShowWorkspaceOptions}
         handleSignOut={handleSignOut}
+        onCreateOrganization={() => {
+          setOrganizationsError("");
+          setNewOrganizationName("");
+          setShowCreateOrganizationModal(true);
+        }}
       />
 
       <main className="dashboard-main">
@@ -293,6 +352,16 @@ export default function DashboardPage() {
           {activeView === "AI Assistant" && (
             <AIAssistantView organizationId={selectedOrganizationId} />
           )}
+          {activeView === "Members" && (
+            <MembersView
+              organizationId={selectedOrganizationId}
+              organizationRole={
+                organizations.find(
+                  (org) => String(org.id) === String(selectedOrganizationId),
+                )?.role
+              }
+            />
+          )}
 
           <footer className="dashboard-footer">
             <span>NeuralDesk</span>
@@ -300,6 +369,102 @@ export default function DashboardPage() {
           </footer>
         </div>
       </main>
+      {showCreateOrganizationModal && (
+        <div
+          className="delete-modal-overlay"
+          onClick={() => {
+            if (!creatingOrganization) {
+              setShowCreateOrganizationModal(false);
+              setOrganizationsError("");
+            }
+          }}
+        >
+          <div
+            className="delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-organization-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="create-organization-title">Create Organization</h2>
+
+            <p>
+              Create a workspace to organize your documents and AI
+              conversations.
+            </p>
+
+            <form onSubmit={handleCreateOrganization}>
+              <label
+                htmlFor="organization-name"
+                style={{
+                  display: "block",
+                  marginTop: "20px",
+                  marginBottom: "8px",
+                  fontWeight: 600,
+                }}
+              >
+                Organization Name
+              </label>
+
+              <input
+                id="organization-name"
+                type="text"
+                value={newOrganizationName}
+                onChange={(event) => {
+                  setNewOrganizationName(event.target.value);
+                  setOrganizationsError("");
+                }}
+                placeholder="e.g. My Company"
+                maxLength={255}
+                autoFocus
+                required
+                disabled={creatingOrganization}
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "12px",
+                  border: "1px solid var(--border-color, #d1d5db)",
+                  borderRadius: "8px",
+                  font: "inherit",
+                }}
+              />
+
+              {organizationsError && (
+                <div
+                  className="document-message document-error"
+                  role="alert"
+                  style={{ marginTop: "12px" }}
+                >
+                  {organizationsError}
+                </div>
+              )}
+
+              <div className="delete-modal-actions">
+                <button
+                  type="button"
+                  className="delete-modal-cancel"
+                  disabled={creatingOrganization}
+                  onClick={() => {
+                    setShowCreateOrganizationModal(false);
+                    setOrganizationsError("");
+                    setNewOrganizationName("");
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="delete-modal-confirm"
+                  disabled={creatingOrganization || !newOrganizationName.trim()}
+                >
+                  {creatingOrganization ? "Creating..." : "Create Organization"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

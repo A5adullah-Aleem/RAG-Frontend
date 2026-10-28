@@ -26,6 +26,8 @@ export default function AIAssistantView({ organizationId }) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [isThinking, setIsThinking] = useState(false);
+
   // Load messages of a selected conversation
   const loadMessages = useCallback(
     async (conversationId) => {
@@ -314,14 +316,15 @@ export default function AIAssistantView({ organizationId }) {
   }
 
   return (
-    <section className="subpage">
-      <div className="page-eyebrow">ASK YOUR KNOWLEDGE</div>
-
-      <h1>AI Assistant</h1>
-
-      <p className="subpage-description">
-        Ask questions and get answers grounded in your organizations documents.
-      </p>
+    <section className="subpage ai-assistant-page">
+      <header className="ai-page-header">
+        <div className="page-eyebrow">ASK YOUR KNOWLEDGE</div>
+        <h1>AI Assistant</h1>
+        <p className="subpage-description">
+          Ask questions and get answers grounded in your organizations
+          documents.
+        </p>
+      </header>
 
       {!organizationId && (
         <div className="document-message document-error">
@@ -334,8 +337,12 @@ export default function AIAssistantView({ organizationId }) {
         style={{
           display: "grid",
           gridTemplateColumns: "minmax(180px, 240px) minmax(0, 1fr)",
+          gridTemplateRows: "minmax(0, 1fr)",
           gap: "20px",
-          minHeight: "500px",
+          flex: 1,
+          minHeight: 0,
+          minWidth: 0,
+          overflow: "hidden",
         }}
       >
         {/* Conversation history sidebar */}
@@ -344,6 +351,7 @@ export default function AIAssistantView({ organizationId }) {
             borderRight: "1px solid var(--border-color, #e5e7eb)",
             paddingRight: "16px",
             minWidth: 0,
+            overflowY: "auto",
           }}
         >
           <button
@@ -510,36 +518,41 @@ export default function AIAssistantView({ organizationId }) {
 
         {/* Main chat area */}
         <div
+          className="assistant-chat-panel"
           style={{
             display: "flex",
             flexDirection: "column",
             minWidth: 0,
+            minHeight: 0,
+            overflow: "hidden",
           }}
         >
-          <div className="chat-symbol">✳</div>
-
-          <h2>Your knowledge assistant</h2>
-
-          <p>
-            Ask questions about your uploaded documents and get context-based
-            answers.
-          </p>
-
           {messages.length === 0 && !loading && (
-            <div className="assistant-suggestions">
-              <p>Try asking:</p>
+            <div className="assistant-empty">
+              <div className="chat-symbol">✳</div>
 
-              {suggestedQuestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  className="suggested-question"
-                  disabled={!organizationId || loading || historyLoading}
-                  onClick={(event) => handleAsk(event, suggestion)}
-                >
-                  {suggestion}
-                </button>
-              ))}
+              <h2>Your knowledge assistant</h2>
+
+              <p>
+                Ask questions about your uploaded documents and get
+                context-based answers.
+              </p>
+
+              <div className="assistant-suggestions">
+                <p>Try asking:</p>
+
+                {suggestedQuestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="suggested-question"
+                    disabled={!organizationId || loading || historyLoading}
+                    onClick={(event) => handleAsk(event, suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -587,9 +600,21 @@ export default function AIAssistantView({ organizationId }) {
             ))}
 
             {loading && (
-              <div className="assistant-message assistant">
+              <div className="assistant-message assistant thinking-message">
                 <strong>NeuralDesk AI</strong>
-                <p>Searching documents and generating an answer...</p>
+
+                <div
+                  className="thinking-indicator"
+                  role="status"
+                  aria-label="AI is thinking"
+                >
+                  <span className="thinking-dots">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                  <span>Searching documents and generating an answer...</span>
+                </div>
               </div>
             )}
           </div>
